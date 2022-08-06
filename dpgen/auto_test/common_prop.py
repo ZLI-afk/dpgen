@@ -7,11 +7,14 @@ import dpgen.auto_test.lib.util as util
 from dpgen import dlog
 from dpgen.util import sepline
 from dpgen.auto_test.EOS import EOS
+from dpgen.auto_test.Cohesive import Cohesive
 from dpgen.auto_test.Elastic import Elastic
 from dpgen.auto_test.Interstitial import Interstitial
 from dpgen.auto_test.Surface import Surface
 from dpgen.auto_test.Vacancy import Vacancy
 from dpgen.auto_test.Gamma import Gamma
+from dpgen.auto_test.GammaA import GammaA
+from dpgen.auto_test.GammaB import GammaB
 from dpgen.auto_test.calculator import make_calculator
 from dpgen.dispatcher.Dispatcher import make_dispatcher
 from dpgen.dispatcher.Dispatcher import make_submission
@@ -27,6 +30,8 @@ def make_property_instance(parameters):
     prop_type = parameters['type']
     if prop_type == 'eos':
         return EOS(parameters)
+    if prop_type == 'cohesive':
+        return Cohesive(parameters)
     elif prop_type == 'elastic':
         return Elastic(parameters)
     elif prop_type == 'vacancy':
@@ -37,6 +42,10 @@ def make_property_instance(parameters):
         return Surface(parameters)
     elif prop_type == 'gamma':
         return Gamma(parameters)
+    elif prop_type == 'gammaA':
+        return GammaA(parameters)
+    elif prop_type == 'gammaB':
+        return GammaB(parameters)
     else:
         raise RuntimeError(f'unknown property type {prop_type}')
 
