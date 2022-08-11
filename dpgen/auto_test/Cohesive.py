@@ -26,11 +26,18 @@ class Cohesive(Property):
                 self.vol_step = parameter['vol_step']
                 parameter['vol_abs'] = parameter.get('vol_abs', False)
                 self.vol_abs = parameter['vol_abs']
+                parameter['lattice_frac'] = parameter.get('lattice_frac', False)
+                self.lattice_frac = parameter['lattice_frac']
             parameter['cal_type'] = parameter.get('cal_type', 'relaxation')
             self.cal_type = parameter['cal_type']
-            default_cal_setting = {"relax_pos": True,
-                                   "relax_shape": True,
-                                   "relax_vol": False}
+            if self.lattice_frac:
+                default_cal_setting = {"relax_pos": False,
+                                       "relax_shape": False,
+                                       "relax_vol": False}
+            else:
+                default_cal_setting = {"relax_pos": True,
+                                       "relax_shape": True,
+                                       "relax_vol": False}
             if 'cal_setting' not in parameter:
                 parameter['cal_setting'] = default_cal_setting
             else:
@@ -119,9 +126,14 @@ class Cohesive(Property):
 
             else:
                 print('gen eos from ' + str(self.vol_start) + ' to ' + str(self.vol_end) + ' by every ' + str(self.vol_step))
-                if self.vol_abs :
+                if self.vol_abs:
+                    print('treat vol_start and vol_end as absolute volume')
                     dlog.info('treat vol_start and vol_end as absolute volume')
-                else :
+                elif self.lattice_frac:
+                    print('treat vol_start and vol_end as lattice_start and lattice_end in relative number')
+                    dlog.info('treat vol_start and vol_end as lattice_start and lattice_end in relative number')
+                else:
+                    print('treat vol_start and vol_end as relative volume')
                     dlog.info('treat vol_start and vol_end as relative volume')
                 equi_contcar = os.path.join(path_to_equi, 'CONTCAR')
                 if not os.path.exists(equi_contcar):
@@ -145,10 +157,13 @@ class Cohesive(Property):
                     os.symlink(os.path.relpath(equi_contcar), 'POSCAR.orig')
                     # scale = (vol / vol_to_poscar) ** (1. / 3.)
 
-                    if self.vol_abs :
+                    if self.vol_abs:
                         scale = (vol / vol_to_poscar) ** (1. / 3.)
                         eos_params = {'volume': vol, 'scale': scale}
-                    else :
+                    elif self.lattice_frac:
+                        scale = vol
+                        eos_params = {'volume': vol**3 * vol_to_poscar, 'scale': scale}
+                    else:
                         scale = vol ** (1. / 3.)
                         eos_params = {'volume': vol * vol_to_poscar, 'scale': scale}
                     dumpfn(eos_params, 'eos.json', indent=4)
@@ -179,9 +194,14 @@ class Cohesive(Property):
             for ii in range(len(all_tasks)):
                 # vol = self.vol_start + ii * self.vol_step
                 vol = loadfn(os.path.join(all_tasks[ii], 'eos.json'))['volume']
+                scale = loadfn(os.path.join(all_tasks[ii], 'eos.json'))['scale']
                 task_result = loadfn(all_res[ii])
-                res_data[vol] = task_result['energies'][-1] / sum(task_result['atom_numbs'])
-                ptr_data += '%7.3f  %8.4f \n' % (vol, task_result['energies'][-1] / sum(task_result['atom_numbs']))
+                if self.lattice_frac:
+                    res_data[scale] = task_result['energies'][-1] / sum(task_result['atom_numbs'])
+                    ptr_data += '%7.3f  %8.4f \n' % (scale, task_result['energies'][-1] / sum(task_result['atom_numbs']))
+                else:
+                    res_data[vol] = task_result['energies'][-1] / sum(task_result['atom_numbs'])
+                    ptr_data += '%7.3f  %8.4f \n' % (vol, task_result['energies'][-1] / sum(task_result['atom_numbs']))
                 # res_data[vol] = all_res[ii]['energy'] / len(all_res[ii]['force'])
                 # ptr_data += '%7.3f  %8.4f \n' % (vol, all_res[ii]['energy'] / len(all_res[ii]['force']))
 
