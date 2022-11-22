@@ -300,13 +300,14 @@ class Gamma(Property):
         }
         add_fix_str = ' ' + fix_dict[self.add_fix[0]] + \
                       ' ' + fix_dict[self.add_fix[1]] + \
-                      ' ' + fix_dict[self.add_fix[2]] + '\n'
+                      ' ' + fix_dict[self.add_fix[2]] + ' '
         with open(poscar, 'r') as fin1:
             contents = fin1.readlines()
             contents.insert(insert_pos-1, 'Selective dynamics\n')
             for ii in range(insert_pos, 0, 1):
-                contents[ii] = contents[ii].replace('\n', '')
-                contents[ii] += add_fix_str
+                new_pos_str = contents[ii].split(' ')
+                new_pos_str.insert(-1, add_fix_str)
+                contents[ii] = ''.join(new_pos_str)
         with open(poscar, 'w') as fin2:
             for ii in range(len(contents)):
                 fin2.write(contents[ii])
